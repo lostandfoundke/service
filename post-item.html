@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Item - Lost & Found Kenya</title>
+    <meta name="description" content="Post a found or lost item to help reunite it with its owner.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .step-indicator {
+            transition: all 0.3s ease;
+        }
+        
+        .step-indicator.active {
+            background: linear-gradient(135deg, #00A651, #38A169);
+            color: white;
+        }
+        
+        .step-indicator.completed {
+            background: #38A169;
+            color: white;
+        }
+        
+        .form-step {
+            display: none;
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        
+        .form-step.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .item-type-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .item-type-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 166, 81, 0.15);
+        }
+        
+        .item-type-card.selected {
+            background: linear-gradient(135deg, #00A651, #38A169);
+            color: white;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(0, 166, 81, 0.3);
+        }
+        
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #00A651;
+            background-color: #f0fdf4;
+        }
+        
+        .upload-area.dragover {
+            border-color: #00A651;
+            background-color: #dcfce7;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00A651, #38A169);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 166, 81, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3);
+        }
+        
+        .image-preview {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .image-preview .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">LF</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">Lost<span class="text-green-600">&</span>Found</span>
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="text-gray-600 hover:text-green-600 transition-colors">Back to Home</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" id="pageTitle">Post an Item</h1>
+            <p class="text-gray-600" id="pageSubtitle">Help reunite lost items with their owners</p>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div class="flex items-center justify-center mb-8">
+            <div class="flex items-center space-x-4">
+                <div class="step-indicator active w-10 h-10 rounded-full flex items-center justify-center font-semibold" id="step1Indicator">1</div>
+                <div class="w-16 h-1 bg-gray-300" id="progress1"></div>
+                <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-gray-300 text-gray-600" id="step2Indicator">2</div>
+                <div class="w-16 h-1 bg-gray-300" id="progress2"></div>
+                <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-gray-300 text-gray-600" id="step3Indicator">3</div>
+                <div class="w-16 h-1 bg-gray-300" id="progress3"></div>
+                <div class="step-indicator w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-gray-300 text-gray-600" id="step4Indicator">4</div>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <!-- Step 1: Item Type -->
+            <div class="form-step active" id="step1">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2" id="step1Title">What type of item?</h2>
+                    <p class="text-gray-600" id="step1Subtitle">Select the category that best describes your item</p>
+                </div>
+
+                <!-- Item Type Selection -->
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="id-card">
+                        <div class="text-4xl mb-3">🆔</div>
+                        <h3 class="font-semibold mb-2" id="typeID">ID Card</h3>
+                        <p class="text-sm text-gray-600" id="typeIDDesc">National ID, Student ID, Work Permit</p>
+                    </div>
+                    
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="phone">
+                        <div class="text-4xl mb-3">📱</div>
+                        <h3 class="font-semibold mb-2" id="typePhone">Phone</h3>
+                        <p class="text-sm text-gray-600" id="typePhoneDesc">Mobile phone, tablet, accessories</p>
+                    </div>
+                    
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="wallet">
+                        <div class="text-4xl mb-3">👛</div>
+                        <h3 class="font-semibold mb-2" id="typeWallet">Wallet/Purse</h3>
+                        <p class="text-sm text-gray-600" id="typeWalletDesc">Wallet, purse, handbag</p>
+                    </div>
+                    
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="document">
+                        <div class="text-4xl mb-3">📄</div>
+                        <h3 class="font-semibold mb-2" id="typeDocument">Document</h3>
+                        <p class="text-sm text-gray-600" id="typeDocumentDesc">Certificate, passport, license</p>
+                    </div>
+                    
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="electronics">
+                        <div class="text-4xl mb-3">💻</div>
+                        <h3 class="font-semibold mb-2" id="typeElectronics">Electronics</h3>
+                        <p class="text-sm text-gray-600" id="typeElectronicsDesc">Laptop, camera, gadgets</p>
+                    </div>
+                    
+                    <div class="item-type-card bg-white border-2 border-gray-200 rounded-xl p-6 text-center" data-type="other">
+                        <div class="text-4xl mb-3">🔑</div>
+                        <h3 class="font-semibold mb-2" id="typeOther">Other</h3>
+                        <p class="text-sm text-gray-600" id="typeOtherDesc">Keys, jewelry, anything else</p>
+                    </div>
+                </div>
+
+                <!-- Lost/Found Status -->
+                <div class="mb-8">
+                    <label class="block text-sm font-semibold text-gray-700 mb-4" id="statusLabel">Is this item lost or found?</label>
+                    <div class="flex space-x-4">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="itemStatus" value="found" class="text-green-600" checked>
+                            <span class="text-gray-700" id="statusFound">I found this item</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="radio" name="itemStatus" value="lost" class="text-green-600">
+                            <span class="text-gray-700" id="statusLost">I lost this item</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Item Details -->
+            <div class="form-step" id="step2">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2" id="step2Title">Item Details</h2>
+                    <p class="text-gray-600" id="step2Subtitle">Provide as much detail as possible</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="itemNameLabel">Item Name/Title *</label>
+                            <input type="text" id="itemName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="e.g., National ID - John Doe">
+                        </div>
+                        
+                        <div id="idNumberField" class="hidden">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="idNumberLabel">ID Number (Optional)</label>
+                            <input type="text" id="idNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="e.g., 12345678">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2" id="descriptionLabel">Description *</label>
+                        <textarea id="itemDescription" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="Describe the item, any distinguishing features, condition, etc."></textarea>
+                    </div>
+                    
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="locationLabel">Location Found/Lost *</label>
+                            <input type="text" id="itemLocation" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="e.g., Nairobi CBD, Kencom Bus Stop">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="dateLabel">Date Found/Lost *</label>
+                            <input type="date" id="itemDate" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors">
+                        </div>
+                    </div>
+                    
+                    <div id="rewardField" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2" id="rewardLabel">Reward Offered (Optional)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-3 text-gray-500">Ksh</span>
+                            <input type="number" id="rewardAmount" class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Contact Information -->
+            <div class="form-step" id="step3">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2" id="step3Title">Contact Information</h2>
+                    <p class="text-gray-600" id="step3Subtitle">How should people contact you?</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="contactNameLabel">Your Name *</label>
+                            <input type="text" id="contactName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="Your full name">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2" id="contactPhoneLabel">Phone Number *</label>
+                            <input type="tel" id="contactPhone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="07XXXXXXXX">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2" id="contactEmailLabel">Email Address (Optional)</label>
+                        <input type="email" id="contactEmail" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="your@email.com">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-4" id="privacyLabel">Who can see your contact information?</label>
+                        <div class="space-y-3">
+                            <label class="flex items-start space-x-3 cursor-pointer">
+                                <input type="radio" name="privacyLevel" value="public" class="mt-1 text-green-600" checked>
+                                <div>
+                                    <div class="font-medium text-gray-700" id="privacyPublic">Anyone (Public)</div>
+                                    <div class="text-sm text-gray-600" id="privacyPublicDesc">Anyone can see your contact details</div>
+                                </div>
+                            </label>
+                            <label class="flex items-start space-x-3 cursor-pointer">
+                                <input type="radio" name="privacyLevel" value="registered" class="mt-1 text-green-600">
+                                <div>
+                                    <div class="font-medium text-gray-700" id="privacyRegistered">Registered Users Only</div>
+                                    <div class="text-sm text-gray-600" id="privacyRegisteredDesc">Only logged-in users can see your details</div>
+                                </div>
+                            </label>
+                            <label class="flex items-start space-x-3 cursor-pointer">
+                                <input type="radio" name="privacyLevel" value="paid" class="mt-1 text-green-600">
+                                <div>
+                                    <div class="font-medium text-gray-700" id="privacyPaid">After M-Pesa Payment</div>
+                                    <div class="text-sm text-gray-600" id="privacyPaidDesc">Users pay Ksh 20 to unlock your contact details</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Photos -->
+            <div class="form-step" id="step4">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2" id="step4Title">Add Photos</h2>
+                    <p class="text-gray-600" id="step4Subtitle">Help others identify the item</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-4" id="photosLabel">Upload Photos (Optional)</label>
+                        <div class="upload-area rounded-lg p-8 text-center" id="uploadArea">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <p class="text-gray-600 mb-2" id="uploadText">Click to upload or drag and drop</p>
+                            <p class="text-sm text-gray-500" id="uploadFormat">PNG, JPG, GIF up to 10MB</p>
+                            <input type="file" id="photoInput" class="hidden" multiple accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <!-- Image Previews -->
+                    <div id="imagePreviews" class="grid grid-cols-2 md:grid-cols-3 gap-4 hidden">
+                        <!-- Preview images will be added here -->
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-blue-500 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <div>
+                                <h4 class="font-medium text-blue-800 mb-1" id="photoTipsTitle">Photo Tips</h4>
+                                <ul class="text-sm text-blue-700 space-y-1" id="photoTips">
+                                    <li>• Take clear, well-lit photos</li>
+                                    <li>• Show any distinguishing features</li>
+                                    <li>• Include multiple angles if possible</li>
+                                    <li>• Blur sensitive information on IDs</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                <button type="button" id="prevBtn" class="btn-secondary px-6 py-3 text-white font-semibold rounded-lg hidden">
+                    <span id="prevBtnText">Previous</span>
+                </button>
+                <div class="flex-1"></div>
+                <button type="button" id="nextBtn" class="btn-primary px-6 py-3 text-white font-semibold rounded-lg">
+                    <span id="nextBtnText">Next</span>
+                </button>
+                <button type="button" id="submitBtn" class="btn-primary px-6 py-3 text-white font-semibold rounded-lg hidden">
+                    <span id="submitBtnText">Post Item</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full text-center">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800 mb-2" id="successTitle">Item Posted Successfully!</h3>
+            <p class="text-gray-600 mb-6" id="successMessage">Your item has been posted and will be reviewed before appearing in search results.</p>
+            <div class="flex space-x-4">
+                <button onclick="closeSuccessModal()" class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors" id="closeBtn">
+                    Close
+                </button>
+                <a href="index.html" class="flex-1 btn-primary text-white py-2 px-4 rounded-lg text-center" id="homeBtn">
+                    Go Home
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">LF</span>
+                    </div>
+                    <span class="text-xl font-bold">Lost<span class="text-green-400">&</span>Found Kenya</span>
+                </div>
+                <p class="text-gray-400 mb-4">
+                    Connecting finders with owners across Kenya. Secure, reliable, and community-driven.
+                </p>
+                <p class="text-gray-500 text-sm">
+                    © 2025 Lost & Found Kenya. Built with ❤️ for the Kenyan community.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load JavaScript -->
+    <script src="main.js"></script>
+    <script>
+        // Post Item Form JavaScript
+        let currentStep = 1;
+        let selectedItemType = '';
+        let uploadedFiles = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePostForm();
+        });
+
+        function initializePostForm() {
+            setupFormNavigation();
+            setupItemTypeSelection();
+            setupFileUpload();
+            setDefaultDate();
+            
+            // Check URL parameters for item type
+            const urlParams = new URLSearchParams(window.location.search);
+            const itemType = urlParams.get('type');
+            if (itemType === 'lost') {
+                document.querySelector('input[name="itemStatus"][value="lost"]').checked = true;
+                updateFormForLostItem();
+            }
+        }
+
+        function setupFormNavigation() {
+            const nextBtn = document.getElementById('nextBtn');
+            const prevBtn = document.getElementById('prevBtn');
+            const submitBtn = document.getElementById('submitBtn');
+
+            nextBtn.addEventListener('click', nextStep);
+            prevBtn.addEventListener('click', prevStep);
+            submitBtn.addEventListener('click', submitForm);
+        }
+
+        function setupItemTypeSelection() {
+            const itemTypeCards = document.querySelectorAll('.item-type-card');
+            
+            itemTypeCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove previous selection
+                    itemTypeCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Select current card
+                    this.classList.add('selected');
+                    selectedItemType = this.dataset.type;
+                    
+                    // Update form fields based on item type
+                    updateFormFields(selectedItemType);
+                });
+            });
+
+            // Status radio buttons
+            const statusRadios = document.querySelectorAll('input[name="itemStatus"]');
+            statusRadios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'lost') {
+                        updateFormForLostItem();
+                    } else {
+                        updateFormForFoundItem();
+                    }
+                });
+            });
+        }
+
+        function updateFormFields(itemType) {
+            const idNumberField = document.getElementById('idNumberField');
+            
+            if (itemType === 'id-card') {
+                idNumberField.classList.remove('hidden');
+            } else {
+                idNumberField.classList.add('hidden');
+            }
+        }
+
+        function updateFormForLostItem() {
+            const rewardField = document.getElementById('rewardField');
+            rewardField.classList.remove('hidden');
+            
+            // Update status field labels
+            document.getElementById('statusFound').textContent = currentLang === 'sw' ? 'Nimeipata' : 'I found this';
+            document.getElementById('statusLost').textContent = currentLang === 'sw' ? 'Nimeipoteza' : 'I lost this';
+        }
+
+        function updateFormForFoundItem() {
+            const rewardField = document.getElementById('rewardField');
+            rewardField.classList.add('hidden');
+        }
+
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('itemDate').value = today;
+        }
+
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const photoInput = document.getElementById('photoInput');
+            
+            uploadArea.addEventListener('click', () => photoInput.click());
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            photoInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            const imagePreviews = document.getElementById('imagePreviews');
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const preview = createImagePreview(e.target.result, file.name);
+                        imagePreviews.appendChild(preview);
+                        imagePreviews.classList.remove('hidden');
+                        uploadedFiles.push(file);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        function createImagePreview(src, fileName) {
+            const div = document.createElement('div');
+            div.className = 'image-preview';
+            div.innerHTML = `
+                <img src="${src}" alt="${fileName}" class="w-full h-32 object-cover rounded-lg">
+                <button type="button" class="remove-btn" onclick="removeImage(this)">×</button>
+            `;
+            return div;
+        }
+
+        function removeImage(button) {
+            const preview = button.parentElement;
+            const index = Array.from(preview.parentElement.children).indexOf(preview);
+            
+            uploadedFiles.splice(index, 1);
+            preview.remove();
+            
+            if (uploadedFiles.length === 0) {
+                document.getElementById('imagePreviews').classList.add('hidden');
+            }
+        }
+
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (currentStep < 4) {
+                    currentStep++;
+                    updateStepDisplay();
+                }
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepDisplay();
+            }
+        }
+
+        function validateCurrentStep() {
+            switch (currentStep) {
+                case 1:
+                    return validateStep1();
+                case 2:
+                    return validateStep2();
+                case 3:
+                    return validateStep3();
+                case 4:
+                    return true; // Photos are optional
+                default:
+                    return true;
+            }
+        }
+
+        function validateStep1() {
+            if (!selectedItemType) {
+                showNotification('Please select an item type', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function validateStep2() {
+            const itemName = document.getElementById('itemName').value.trim();
+            const description = document.getElementById('itemDescription').value.trim();
+            const location = document.getElementById('itemLocation').value.trim();
+            const date = document.getElementById('itemDate').value;
+            
+            if (!itemName || !description || !location || !date) {
+                showNotification('Please fill in all required fields', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function validateStep3() {
+            const name = document.getElementById('contactName').value.trim();
+            const phone = document.getElementById('contactPhone').value.trim();
+            
+            if (!name || !phone) {
+                showNotification('Please fill in your name and phone number', 'error');
+                return false;
+            }
+            
+            // Validate phone number format (Kenyan)
+            const phoneRegex = /^07\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                showNotification('Please enter a valid Kenyan phone number (07XXXXXXXX)', 'error');
+                return false;
+            }
+            
+            return true;
+        }
+
+        function updateStepDisplay() {
+            // Hide all steps
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            
+            // Show current step
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            
+            // Update step indicators
+            for (let i = 1; i <= 4; i++) {
+                const indicator = document.getElementById(`step${i}Indicator`);
+                const progress = document.getElementById(`progress${i}`);
+                
+                if (i < currentStep) {
+                    indicator.className = 'step-indicator completed w-10 h-10 rounded-full flex items-center justify-center font-semibold';
+                    if (progress) progress.className = 'w-16 h-1 bg-green-500';
+                } else if (i === currentStep) {
+                    indicator.className = 'step-indicator active w-10 h-10 rounded-full flex items-center justify-center font-semibold';
+                    if (progress) progress.className = 'w-16 h-1 bg-gray-300';
+                } else {
+                    indicator.className = 'step-indicator w-10 h-10 rounded-full flex items-center justify-center font-semibold bg-gray-300 text-gray-600';
+                    if (progress) progress.className = 'w-16 h-1 bg-gray-300';
+                }
+            }
+            
+            // Update navigation buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (currentStep === 1) {
+                prevBtn.classList.add('hidden');
+            } else {
+                prevBtn.classList.remove('hidden');
+            }
+            
+            if (currentStep === 4) {
+                nextBtn.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                submitBtn.classList.add('hidden');
+            }
+        }
+
+        function submitForm() {
+            if (!validateCurrentStep()) {
+                return;
+            }
+            
+            // Collect form data
+            const formData = {
+                itemType: selectedItemType,
+                status: document.querySelector('input[name="itemStatus"]:checked').value,
+                itemName: document.getElementById('itemName').value.trim(),
+                idNumber: document.getElementById('idNumber').value.trim(),
+                description: document.getElementById('itemDescription').value.trim(),
+                location: document.getElementById('itemLocation').value.trim(),
+                date: document.getElementById('itemDate').value,
+                reward: document.getElementById('rewardAmount').value,
+                contactName: document.getElementById('contactName').value.trim(),
+                contactPhone: document.getElementById('contactPhone').value.trim(),
+                contactEmail: document.getElementById('contactEmail').value.trim(),
+                privacyLevel: document.querySelector('input[name="privacyLevel"]:checked').value,
+                photos: uploadedFiles
+            };
+            
+            // Simulate form submission
+            simulateFormSubmission(formData);
+        }
+
+        function simulateFormSubmission(formData) {
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span>Posting...</span>';
+            submitBtn.disabled = true;
+            
+            // Simulate API call
+            setTimeout(() => {
+                // Store in localStorage (for demo)
+                const existingItems = JSON.parse(localStorage.getItem('postedItems') || '[]');
+                existingItems.push({
+                    id: Date.now(),
+                    ...formData,
+                    datePosted: new Date().toISOString(),
+                    isVerified: false
+                });
+                localStorage.setItem('postedItems', JSON.stringify(existingItems));
+                
+                // Show success modal
+                showSuccessModal();
+                
+                // Reset button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }, 2000);
+        }
+
+        function showSuccessModal() {
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function closeSuccessModal() {
+            document.getElementById('successModal').classList.add('hidden');
+        }
+
+        // Language translations for this page
+        const pageTranslations = {
+            en: {
+                pageTitle: 'Post an Item',
+                pageSubtitle: 'Help reunite lost items with their owners',
+                step1Title: 'What type of item?',
+                step1Subtitle: 'Select the category that best describes your item',
+                typeID: 'ID Card',
+                typeIDDesc: 'National ID, Student ID, Work Permit',
+                typePhone: 'Phone',
+                typePhoneDesc: 'Mobile phone, tablet, accessories',
+                typeWallet: 'Wallet/Purse',
+                typeWalletDesc: 'Wallet, purse, handbag',
+                typeDocument: 'Document',
+                typeDocumentDesc: 'Certificate, passport, license',
+                typeElectronics: 'Electronics',
+                typeElectronicsDesc: 'Laptop, camera, gadgets',
+                typeOther: 'Other',
+                typeOtherDesc: 'Keys, jewelry, anything else',
+                statusLabel: 'Is this item lost or found?',
+                statusFound: 'I found this item',
+                statusLost: 'I lost this item',
+                step2Title: 'Item Details',
+                step2Subtitle: 'Provide as much detail as possible',
+                itemNameLabel: 'Item Name/Title *',
+                idNumberLabel: 'ID Number (Optional)',
+                descriptionLabel: 'Description *',
+                locationLabel: 'Location Found/Lost *',
+                dateLabel: 'Date Found/Lost *',
+                rewardLabel: 'Reward Offered (Optional)',
+                step3Title: 'Contact Information',
+                step3Subtitle: 'How should people contact you?',
+                contactNameLabel: 'Your Name *',
+                contactPhoneLabel: 'Phone Number *',
+                contactEmailLabel: 'Email Address (Optional)',
+                privacyLabel: 'Who can see your contact information?',
+                privacyPublic: 'Anyone (Public)',
+                privacyPublicDesc: 'Anyone can see your contact details',
+                privacyRegistered: 'Registered Users Only',
+                privacyRegisteredDesc: 'Only logged-in users can see your details',
+                privacyPaid: 'After M-Pesa Payment',
+                privacyPaidDesc: 'Users pay Ksh 20 to unlock your contact details',
+                step4Title: 'Add Photos',
+                step4Subtitle: 'Help others identify the item',
+                photosLabel: 'Upload Photos (Optional)',
+                uploadText: 'Click to upload or drag and drop',
+                uploadFormat: 'PNG, JPG, GIF up to 10MB',
+                photoTipsTitle: 'Photo Tips',
+                prevBtnText: 'Previous',
+                nextBtnText: 'Next',
+                submitBtnText: 'Post Item',
+                successTitle: 'Item Posted Successfully!',
+                successMessage: 'Your item has been posted and will be reviewed before appearing in search results.',
+                closeBtn: 'Close',
+                homeBtn: 'Go Home'
+            },
+            sw: {
+                pageTitle: 'Tuma Kitu',
+                pageSubtitle: 'Saidia kurudisha vitu vilivyopotea kwa wenyewe',
+                step1Title: 'Ni aina gani ya kitu?',
+                step1Subtitle: 'Chagua kategoria inayofaa kabisa',
+                typeID: 'Kitambulisho',
+                typeIDDesc: 'Kitambulisho cha taifa, wanafunzi, kazi',
+                typePhone: 'Simu',
+                typePhoneDesc: 'Simu, kibao, vifaa',
+                typeWallet: 'Mpochi',
+                typeWalletDesc: 'Mpochi, mkoba wa mkono',
+                typeDocument: 'Hati',
+                typeDocumentDesc: 'Cheti, pasipoti, leseni',
+                typeElectronics: 'Elektronic',
+                typeElectronicsDesc: 'Kamputa, kamera, kifaa',
+                typeOther: 'Nyingine',
+                typeOtherDesc: 'Funguo, maridia, kitu kingine',
+                statusLabel: 'Hiki ni kitu ulichopoteza au kupata?',
+                statusFound: 'Nimeipata',
+                statusLost: 'Nimeipoteza',
+                step2Title: 'Maelezo ya Kitu',
+                step2Subtitle: 'Toa maelezo mengi iwezekanavyo',
+                itemNameLabel: 'Jina la Kitu *',
+                idNumberLabel: 'Nambari ya Kitambulisho (Hiari)',
+                descriptionLabel: 'Maelezo *',
+                locationLabel: 'Mahali Uliopata/Ulipoteza *',
+                dateLabel: 'Tarehe Uliopata/Ulipoteza *',
+                rewardLabel: 'Zawadi Inayotolewa (Hiari)',
+                step3Title: 'Taarifa za Mawasiliano',
+                step3Subtitle: 'Watu wakujuliane vipi?',
+                contactNameLabel: 'Jina Lako *',
+                contactPhoneLabel: 'Nambari ya Simu *',
+                contactEmailLabel: 'Barua Pepe (Hiari)',
+                privacyLabel: 'Nani anaweza kuona taarifa zako?',
+                privacyPublic: 'Kila Mtu (Huru)',
+                privacyPublicDesc: 'Kila mtu anaweza kuona maelezo yako',
+                privacyRegistered: 'Watumiaji Waliosajiliwa Tu',
+                privacyRegisteredDesc: 'Watu walioweka kumbukumbu tu wanaoweza kuona',
+                privacyPaid: 'Baada ya Malipo ya M-Pesa',
+                privacyPaidDesc: 'Watumiaji walipe Ksh 20 kufungua taarifa zako',
+                step4Title: 'Ongeza Picha',
+                step4Subtitle: 'Saidia wengine kutambua kitu',
+                photosLabel: 'Pakia Picha (Hiari)',
+                uploadText: 'Bofya kupakia au ulete na kuachia',
+                uploadFormat: 'PNG, JPG, GIF hadi 10MB',
+                photoTipsTitle: 'Vidokezo vya Picha',
+                prevBtnText: 'Iliyotangulia',
+                nextBtnText: 'Ijayo',
+                submitBtnText: 'Tuma Kitu',
+                successTitle: 'Kitu Kimetumwa!',
+                successMessage: 'Kitu chako kimetumwa na kitachunguzwa kabla ya kuonekana matokeoni.',
+                closeBtn: 'Funga',
+                homeBtn: 'Nenda Nyumbani'
+            }
+        };
+
+        // Update page language
+        function updatePageLanguage(lang) {
+            const t = pageTranslations[lang];
+            Object.keys(t).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.tagName === 'INPUT' && element.type !== 'radio') {
+                        element.placeholder = t[key];
+                    } else {
+                        element.textContent = t[key];
+                    }
+                }
+            });
+        }
+
+        // Initialize language
+        updatePageLanguage(currentLang);
+    </script>
+</body>
+</html>

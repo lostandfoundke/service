@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Details - Lost & Found Kenya</title>
+    <meta name="description" content="View details of lost or found item with secure M-Pesa payment.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00A651, #38A169);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 166, 81, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #6B7280, #4B5563);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(107, 114, 128, 0.3);
+        }
+        
+        .blurred-info {
+            filter: blur(4px);
+            user-select: none;
+            pointer-events: none;
+            transition: all 0.5s ease;
+        }
+        
+        .unlocked-info {
+            filter: none;
+            user-select: auto;
+            pointer-events: auto;
+        }
+        
+        .success-animation {
+            animation: successPulse 2s infinite;
+        }
+        
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .payment-step {
+            display: none;
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        
+        .payment-step.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #00A651;
+            animation: confetti-fall 3s linear infinite;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        .image-gallery {
+            position: relative;
+        }
+        
+        .image-gallery img {
+            transition: all 0.3s ease;
+        }
+        
+        .image-gallery:hover img {
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <a href="index.html" class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">LF</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">Lost<span class="text-green-600">&</span>Found</span>
+                    </a>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="index.html" class="text-gray-600 hover:text-green-600 transition-colors">Home</a>
+                    <a href="search-results.html" class="text-gray-600 hover:text-green-600 transition-colors">Search</a>
+                    <a href="post-item.html" class="text-gray-600 hover:text-green-600 transition-colors">Post Item</a>
+                    <a href="admin-dashboard.html" class="text-gray-600 hover:text-green-600 transition-colors">Admin</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="langToggle" class="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <span class="text-sm font-medium" id="currentLang">EN</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumb -->
+        <nav class="flex mb-8" aria-label="Breadcrumb">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a href="index.html" class="text-gray-500 hover:text-green-600 transition-colors">
+                        <span id="breadcrumbHome">Home</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </li>
+                <li>
+                    <a href="search-results.html" class="text-gray-500 hover:text-green-600 transition-colors">
+                        <span id="breadcrumbSearch">Search</span>
+                    </a>
+                </li>
+                <li>
+                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </li>
+                <li>
+                    <span class="text-gray-800 font-medium" id="breadcrumbItem">Item Details</span>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Item Images and Details -->
+            <div class="lg:col-span-2">
+                <!-- Item Status Banner -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center ${item.status === 'found' ? 'bg-green-100' : 'bg-orange-100'}">
+                                <span class="text-2xl">${item.status === 'found' ? '✅' : '🔍'}</span>
+                            </div>
+                            <div>
+                                <h1 class="text-2xl font-bold text-gray-800" id="itemTitle">${item.title}</h1>
+                                <p class="text-gray-600" id="itemStatus">
+                                    ${item.status === 'found' ? (currentLang === 'sw' ? 'Kimepatikana' : 'Found') : (currentLang === 'sw' ? 'Kimepotea' : 'Lost')} 
+                                    • ${formatDate(item.date)}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right">
+                            ${item.isVerified ? `
+                                <div class="flex items-center text-blue-600 mb-2">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium" id="verifiedBadge">${currentLang === 'sw' ? 'Imethibitishwa' : 'Verified'}</span>
+                                </div>
+                            ` : ''}
+                            
+                            ${item.reward ? `
+                                <div class="flex items-center text-yellow-600">
+                                    <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium" id="rewardBadge">Ksh ${item.reward} ${currentLang === 'sw' ? 'Zawadi' : 'Reward'}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Gallery -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4" id="photosTitle">Photos</h2>
+                    <div class="image-gallery">
+                        <div class="splide" id="itemImageCarousel">
+                            <div class="splide__track">
+                                <ul class="splide__list">
+                                    <li class="splide__slide">
+                                        <img src="${item.image}" alt="${item.title}" class="w-full h-80 object-cover rounded-lg">
+                                    </li>
+                                    ${item.additionalImages ? item.additionalImages.map(img => `
+                                        <li class="splide__slide">
+                                            <img src="${img}" alt="${item.title}" class="w-full h-80 object-cover rounded-lg">
+                                        </li>
+                                    `).join('') : ''}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Item Description -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4" id="descriptionTitle">Description</h2>
+                    <p class="text-gray-700 leading-relaxed" id="itemDescription">${item.description}</p>
+                    
+                    <div class="mt-6 grid md:grid-cols-2 gap-4">
+                        <div class="flex items-center text-gray-600">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            <span><strong id="locationLabel">Location:</strong> ${item.location}</span>
+                        </div>
+                        
+                        ${item.idNumber ? `
+                            <div class="flex items-center text-gray-600">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path>
+                                </svg>
+                                <span><strong id="idNumberLabel">ID Number:</strong> ${item.idNumber}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4" id="contactTitle">Contact Information</h2>
+                    
+                    <div id="contactInfo" class="space-y-4">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <p class="text-gray-700">
+                                    <strong id="contactNameLabel">Name:</strong> 
+                                    <span id="contactName" class="${isContactVisible ? 'unlocked-info' : 'blurred-info'}">${item.contact.name}</span>
+                                </p>
+                                <p class="text-gray-700">
+                                    <strong id="contactPhoneLabel">Phone:</strong> 
+                                    <span id="contactPhone" class="${isContactVisible ? 'unlocked-info' : 'blurred-info'}">${item.contact.phone}</span>
+                                </p>
+                                ${item.contact.email ? `
+                                    <p class="text-gray-700">
+                                        <strong id="contactEmailLabel">Email:</strong> 
+                                        <span id="contactEmail" class="${isContactVisible ? 'unlocked-info' : 'blurred-info'}">${item.contact.email}</span>
+                                    </p>
+                                ` : ''}
+                            </div>
+                            
+                            <div class="text-center">
+                                ${!isContactVisible ? `
+                                    <div class="text-sm text-gray-500 mb-2" id="unlockInfo">
+                                        ${currentLang === 'sw' ? 'Maelezo yamefichwa kwa usalama' : 'Contact details hidden for security'}
+                                    </div>
+                                ` : `
+                                    <div class="text-green-600 text-sm font-medium" id="unlockedInfo">
+                                        ✓ ${currentLang === 'sw' ? 'Maelezo yamefunguliwa' : 'Contact details unlocked'}
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+                        
+                        ${!isContactVisible ? `
+                            <div class="text-center">
+                                <button onclick="openPaymentModal()" class="btn-primary px-8 py-3 text-white font-semibold rounded-lg">
+                                    <span id="unlockBtnText">${currentLang === 'sw' ? 'Fungua Maelezo (Ksh. 20)' : 'Unlock Details (Ksh. 20)'}</span>
+                                </button>
+                                <p class="text-sm text-gray-500 mt-2" id="unlockDesc">
+                                    ${currentLang === 'sw' ? 'Lipa Ksh 20 kupitia M-Pesa kuona maelezo ya mawasiliano' : 'Pay Ksh 20 via M-Pesa to view contact details'}
+                                </p>
+                            </div>
+                        ` : `
+                            <div class="flex space-x-4">
+                                <button onclick="contactPerson()" class="flex-1 btn-primary px-6 py-3 text-white font-semibold rounded-lg">
+                                    <span id="contactBtnText">${currentLang === 'sw' ? 'Wasiliana Sasa' : 'Contact Now'}</span>
+                                </button>
+                                <button onclick="reportSuccess()" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 font-semibold rounded-lg transition-colors">
+                                    <span id="successBtnText">${currentLang === 'sw' ? 'Nimeirudisha' : 'I Got It Back'}</span>
+                                </button>
+                            </div>
+                        `}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1">
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4" id="quickActionsTitle">Quick Actions</h3>
+                    
+                    <div class="space-y-3">
+                        <button onclick="shareItem()" class="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path>
+                            </svg>
+                            <span id="shareBtnText">Share Item</span>
+                        </button>
+                        
+                        <button onclick="saveItem()" class="w-full flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>
+                            </svg>
+                            <span id="saveBtnText">Save Item</span>
+                        </button>
+                        
+                        <button onclick="reportItem()" class="w-full flex items-center justify-center space-x-2 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                            </svg>
+                            <span id="reportBtnText">Report Item</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Safety Tips -->
+                <div class="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-3" id="safetyTipsTitle">Safety Tips</h3>
+                    <ul class="text-sm text-blue-700 space-y-2" id="safetyTips">
+                        <li>• Meet in public places during daylight</li>
+                        <li>• Bring a friend or family member</li>
+                        <li>• Verify the item before paying any fees</li>
+                        <li>• Don't share personal financial information</li>
+                        <li>• Report suspicious activity immediately</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-8 max-w-md w-full">
+            <!-- Payment Steps -->
+            <div class="payment-step active" id="paymentStep1">
+                <div class="text-center mb-6">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2" id="paymentModalTitle">Unlock Contact Details</h3>
+                    <p class="text-gray-600 mb-4" id="paymentModalDesc">Pay Ksh 20 via M-Pesa to get the contact information of the person who found this item.</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2" id="mpesaPhoneLabel">M-Pesa Phone Number</label>
+                        <input type="tel" id="mpesaPhone" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:border-green-500 focus:outline-none transition-colors" placeholder="07XXXXXXXX">
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-sm text-green-700" id="securePaymentText">Secure payment via Safaricom M-Pesa</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4">
+                        <button onclick="closePaymentModal()" class="flex-1 bg-gray-200 text-gray-800 py-3 px-4 rounded-lg hover:bg-gray-300 transition-colors" id="cancelPaymentBtn">
+                            Cancel
+                        </button>
+                        <button onclick="initiatePayment()" class="flex-1 btn-primary text-white py-3 px-4 rounded-lg" id="initiatePaymentBtn">
+                            Pay Ksh 20
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Processing Step -->
+            <div class="payment-step" id="paymentStep2">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-blue-600 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2" id="processingTitle">Processing Payment</h3>
+                    <p class="text-gray-600 mb-4" id="processingDesc">Please wait while we process your M-Pesa payment...</p>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-blue-700 text-center" id="stkPushText">
+                            M-Pesa STK Push sent to ${phone}<br>
+                            Enter your PIN to complete payment
+                        </p>
+                    </div>
+                    
+                    <div class="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                        <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        <span id="processingWait">Please wait...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Success Step -->
+            <div class="payment-step" id="paymentStep3">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 success-animation">
+                        <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-green-800 mb-2" id="successTitle">Payment Successful!</h3>
+                    <p class="text-gray-600 mb-4" id="successDesc">Contact details have been unlocked. You can now contact the person directly.</p>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-center space-x-2 text-green-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-medium" id="paymentCompleteText">M-Pesa payment completed</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="closePaymentModal()" class="btn-primary px-6 py-3 text-white font-semibold rounded-lg" id="closeSuccessBtn">
+                        Continue
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">LF</span>
+                    </div>
+                    <span class="text-xl font-bold">Lost<span class="text-green-400">&</span>Found Kenya</span>
+                </div>
+                <p class="text-gray-400 mb-4">
+                    Connecting finders with owners across Kenya. Secure, reliable, and community-driven.
+                </p>
+                <p class="text-gray-500 text-sm">
+                    © 2025 Lost & Found Kenya. Built with ❤️ for the Kenyan community.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Load JavaScript -->
+    <script src="main.js"></script>
+    <script>
+        // Item Details JavaScript
+        let currentItemId = null;
+        let isContactVisible = false;
+        
+        // Sample item data (in real app, this would come from API)
+        const item = {
+            id: 1,
+            type: 'id-card',
+            status: 'found',
+            title: 'National ID - John Mwangi',
+            description: 'Found this national ID card at Kenyatta Avenue bus stop near the main stage. The ID appears to be in good condition with all details clearly visible. I found it around 8:30 AM while waiting for a matatu. The owner can contact me to arrange pickup. I work nearby so we can meet during lunch hours or after work.',
+            location: 'Nairobi CBD, Kenyatta Avenue Bus Stop',
+            date: '2025-01-23',
+            idNumber: '12345678',
+            contact: {
+                name: 'Peter Kimani',
+                phone: '0722345678',
+                email: 'peter.kimani@gmail.com'
+            },
+            image: 'https://images.unsplash.com/photo-1552168324-d612d77725e3?w=600&h=400&fit=crop',
+            isVerified: true,
+            matchScore: 95
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeItemDetails();
+        });
+
+        function initializeItemDetails() {
+            // Get item ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            currentItemId = parseInt(urlParams.get('id')) || 1;
+            
+            // Initialize image carousel
+            initImageCarousel();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Load item details
+            loadItemDetails();
+        }
+
+        function initImageCarousel() {
+            const carousel = new Splide('#itemImageCarousel', {
+                type: 'fade',
+                autoplay: false,
+                arrows: true,
+                pagination: true,
+                cover: true,
+                height: '20rem'
+            });
+            
+            carousel.mount();
+        }
+
+        function setupEventListeners() {
+            // Language toggle
+            document.getElementById('langToggle').addEventListener('click', function() {
+                currentLang = currentLang === 'en' ? 'sw' : 'en';
+                updateLanguage(currentLang);
+                updatePageLanguage(currentLang);
+            });
+        }
+
+        function loadItemDetails() {
+            // In a real app, this would fetch from API
+            // For demo, we use the sample item data
+            
+            // Check if contact should be visible (from payment status)
+            const payments = JSON.parse(localStorage.getItem('payments') || '[]');
+            const hasPaid = payments.some(p => p.itemId === currentItemId && p.status === 'success');
+            isContactVisible = hasPaid || item.status === 'lost';
+            
+            updateContactVisibility();
+        }
+
+        function updateContactVisibility() {
+            const blurredElements = document.querySelectorAll('.blurred-info');
+            const unlockedElements = document.querySelectorAll('.unlocked-info');
+            
+            if (isContactVisible) {
+                blurredElements.forEach(el => {
+                    el.classList.remove('blurred-info');
+                    el.classList.add('unlocked-info');
+                });
+                
+                // Update button
+                const unlockBtn = document.querySelector('button[onclick="openPaymentModal()"]');
+                if (unlockBtn) {
+                    unlockBtn.style.display = 'none';
+                }
+                
+                // Show contact actions
+                const contactInfo = document.getElementById('contactInfo');
+                const newActions = document.createElement('div');
+                newActions.className = 'flex space-x-4';
+                newActions.innerHTML = `
+                    <button onclick="contactPerson()" class="flex-1 btn-primary px-6 py-3 text-white font-semibold rounded-lg">
+                        <span>${currentLang === 'sw' ? 'Wasiliana Sasa' : 'Contact Now'}</span>
+                    </button>
+                    <button onclick="reportSuccess()" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 font-semibold rounded-lg transition-colors">
+                        <span>${currentLang === 'sw' ? 'Nimeirudisha' : 'I Got It Back'}</span>
+                    </button>
+                `;
+                
+                if (unlockBtn) {
+                    unlockBtn.parentElement.innerHTML = newActions.outerHTML;
+                }
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-KE', { 
+                month: 'long', 
+                day: 'numeric',
+                year: 'numeric'
+            });
+        }
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.remove('hidden');
+            
+            // Reset to first step
+            showPaymentStep(1);
+            
+            // Reset form
+            document.getElementById('mpesaPhone').value = '';
+        }
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').classList.add('hidden');
+        }
+
+        function showPaymentStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.payment-step').forEach(stepEl => {
+                stepEl.classList.remove('active');
+            });
+            
+            // Show current step
+            document.getElementById(`paymentStep${step}`).classList.add('active');
+        }
+
+        function initiatePayment() {
+            const phone = document.getElementById('mpesaPhone').value.trim();
+            
+            if (!phone) {
+                showNotification('Please enter your M-Pesa phone number', 'error');
+                return;
+            }
+            
+            // Validate phone number
+            const phoneRegex = /^07\d{8}$/;
+            if (!phoneRegex.test(phone)) {
+                showNotification('Please enter a valid Kenyan phone number (07XXXXXXXX)', 'error');
+                return;
+            }
+            
+            // Show processing step
+            showPaymentStep(2);
+            
+            // Update phone number in processing text
+            document.getElementById('stkPushText').innerHTML = `
+                M-Pesa STK Push sent to ${phone}<br>
+                Enter your PIN to complete payment
+            `;
+            
+            // Simulate payment processing
+            setTimeout(() => {
+                processMpesPayment(phone);
+            }, 2000);
+        }
+
+        function processMpesPayment(phone) {
+            // Simulate payment processing
+            const success = Math.random() > 0.2; // 80% success rate
+            
+            setTimeout(() => {
+                if (success) {
+                    // Payment successful
+                    showPaymentStep(3);
+                    
+                    // Create confetti effect
+                    createConfetti();
+                    
+                    // Record payment
+                    const payments = JSON.parse(localStorage.getItem('payments') || '[]');
+                    payments.push({
+                        itemId: currentItemId,
+                        phone: phone,
+                        amount: 20,
+                        status: 'success',
+                        timestamp: new Date().toISOString()
+                    });
+                    localStorage.setItem('payments', JSON.stringify(payments));
+                    
+                    // Update UI
+                    setTimeout(() => {
+                        isContactVisible = true;
+                        updateContactVisibility();
+                        closePaymentModal();
+                        showNotification('Payment successful! Contact details unlocked.', 'success');
+                    }, 2000);
+                } else {
+                    // Payment failed
+                    showNotification('Payment failed. Please try again.', 'error');
+                    showPaymentStep(1);
+                }
+            }, 3000);
+        }
+
+        function createConfetti() {
+            const colors = ['#00A651', '#38A169', '#FF6B35', '#F56500'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    
+                    document.body.appendChild(confetti);
+                    
+                    setTimeout(() => {
+                        confetti.remove();
+                    }, 3000);
+                }, i * 50);
+            }
+        }
+
+        function contactPerson() {
+            showNotification('Opening contact options...', 'info');
+            
+            // In a real app, this would show contact options (call, SMS, WhatsApp)
+            setTimeout(() => {
+                const contactOptions = `
+                    Contact Options:
+                    📞 Call: ${item.contact.phone}
+                    💬 SMS: ${item.contact.phone}
+                    ${item.contact.email ? `📧 Email: ${item.contact.email}` : ''}
+                `;
+                
+                showNotification('Contact information displayed above', 'success');
+            }, 1000);
+        }
+
+        function reportSuccess() {
+            showNotification('Congratulations! Marking item as returned...', 'success');
+            
+            // In a real app, this would update the item status
+            setTimeout(() => {
+                showNotification('Thank you! The item has been marked as returned.', 'success');
+                
+                // Optionally redirect to success page
+                // window.location.href = 'success.html';
+            }, 2000);
+        }
+
+        function shareItem() {
+            if (navigator.share) {
+                navigator.share({
+                    title: item.title,
+                    text: `Found ${item.title} - ${item.description}`,
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                const shareUrl = window.location.href;
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showNotification('Link copied to clipboard!', 'success');
+                });
+            }
+        }
+
+        function saveItem() {
+            const savedItems = JSON.parse(localStorage.getItem('savedItems') || '[]');
+            const isAlreadySaved = savedItems.some(saved => saved.id === currentItemId);
+            
+            if (isAlreadySaved) {
+                showNotification('Item already saved!', 'info');
+            } else {
+                savedItems.push({
+                    id: currentItemId,
+                    title: item.title,
+                    image: item.image,
+                    date: new Date().toISOString()
+                });
+                localStorage.setItem('savedItems', JSON.stringify(savedItems));
+                showNotification('Item saved successfully!', 'success');
+            }
+        }
+
+        function reportItem() {
+            showNotification('Opening report form...', 'info');
+            
+            // In a real app, this would open a report modal/form
+            setTimeout(() => {
+                const reportReason = prompt('Why are you reporting this item?\n1. Inappropriate content\n2. Fake/scam\n3. Already returned\n4. Other');
+                
+                if (reportReason) {
+                    showNotification('Report submitted successfully. Thank you for helping keep our community safe.', 'success');
+                }
+            }, 1000);
+        }
+
+        // Language translations for this page
+        const pageTranslations = {
+            en: {
+                currentLang: 'EN',
+                breadcrumbHome: 'Home',
+                breadcrumbSearch: 'Search',
+                breadcrumbItem: 'Item Details',
+                itemTitle: item.title,
+                itemStatus: `${item.status === 'found' ? 'Found' : 'Lost'} • ${formatDate(item.date)}`,
+                verifiedBadge: 'Verified',
+                rewardBadge: `Ksh ${item.reward} Reward`,
+                photosTitle: 'Photos',
+                descriptionTitle: 'Description',
+                itemDescription: item.description,
+                locationLabel: 'Location:',
+                idNumberLabel: 'ID Number:',
+                contactTitle: 'Contact Information',
+                contactNameLabel: 'Name:',
+                contactPhoneLabel: 'Phone:',
+                contactEmailLabel: 'Email:',
+                unlockInfo: 'Contact details hidden for security',
+                unlockedInfo: '✓ Contact details unlocked',
+                unlockBtnText: 'Unlock Details (Ksh. 20)',
+                unlockDesc: 'Pay Ksh 20 via M-Pesa to view contact details',
+                contactBtnText: 'Contact Now',
+                successBtnText: 'I Got It Back',
+                quickActionsTitle: 'Quick Actions',
+                shareBtnText: 'Share Item',
+                saveBtnText: 'Save Item',
+                reportBtnText: 'Report Item',
+                safetyTipsTitle: 'Safety Tips',
+                safetyTips: `• Meet in public places during daylight<br>
+                    • Bring a friend or family member<br>
+                    • Verify the item before paying any fees<br>
+                    • Don't share personal financial information<br>
+                    • Report suspicious activity immediately`,
+                paymentModalTitle: 'Unlock Contact Details',
+                paymentModalDesc: 'Pay Ksh 20 via M-Pesa to get the contact information of the person who found this item.',
+                mpesaPhoneLabel: 'M-Pesa Phone Number',
+                securePaymentText: 'Secure payment via Safaricom M-Pesa',
+                cancelPaymentBtn: 'Cancel',
+                initiatePaymentBtn: 'Pay Ksh 20',
+                processingTitle: 'Processing Payment',
+                processingDesc: 'Please wait while we process your M-Pesa payment...',
+                stkPushText: `M-Pesa STK Push sent to ${item.contact.phone}<br>
+                    Enter your PIN to complete payment`,
+                processingWait: 'Please wait...',
+                successTitle: 'Payment Successful!',
+                successDesc: 'Contact details have been unlocked. You can now contact the person directly.',
+                paymentCompleteText: 'M-Pesa payment completed',
+                closeSuccessBtn: 'Continue'
+            },
+            sw: {
+                currentLang: 'SW',
+                breadcrumbHome: 'Nyumbani',
+                breadcrumbSearch: 'Tafuta',
+                breadcrumbItem: 'Maelezo ya Kitu',
+                itemTitle: item.title,
+                itemStatus: `${item.status === 'found' ? 'Kimepatikana' : 'Kimepotea'} • ${formatDate(item.date)}`,
+                verifiedBadge: 'Imethibitishwa',
+                rewardBadge: `Ksh ${item.reward} Zawadi`,
+                photosTitle: 'Picha',
+                descriptionTitle: 'Maelezo',
+                itemDescription: item.description,
+                locationLabel: 'Mahali:',
+                idNumberLabel: 'Nambari ya Kitambulisho:',
+                contactTitle: 'Taarifa za Mawasiliano',
+                contactNameLabel: 'Jina:',
+                contactPhoneLabel: 'Simu:',
+                contactEmailLabel: 'Barua Pepe:',
+                unlockInfo: 'Maelezo yamefichwa kwa usalama',
+                unlockedInfo: '✓ Maelezo yamefunguliwa',
+                unlockBtnText: 'Fungua Maelezo (Ksh. 20)',
+                unlockDesc: 'Lipa Ksh 20 kupitia M-Pesa kuona maelezo ya mawasiliano',
+                contactBtnText: 'Wasiliana Sasa',
+                successBtnText: 'Nimeirudisha',
+                quickActionsTitle: 'Vitendo Haraka',
+                shareBtnText: 'Shiriki Kitu',
+                saveBtnText: 'Hifadhi Kitu',
+                reportBtnText: 'Ripoti Kitu',
+                safetyTipsTitle: 'Vidokezo vya Usalama',
+                safetyTips: `• Patana mahali pa umma mchana<br>
+                    • Leta rafiki au mwanafamilia<br>
+                    • Thibitisha kitu kabla ya kulipa ada yoyote<br>
+                    • Usishiriki taarifa za kifedha za kibinafsi<br>
+                    • Ripoti shughuli za wasiwasi mara moja`,
+                paymentModalTitle: 'Fungua Maelezo ya Mawasiliano',
+                paymentModalDesc: 'Lipa Ksh 20 kupitia M-Pesa kupata taarifa za mawasiliano ya mtu aliyepata kitu hiki.',
+                mpesaPhoneLabel: 'Nambari ya M-Pesa',
+                securePaymentText: 'Malipo salama kupitia Safaricom M-Pesa',
+                cancelPaymentBtn: 'Ghairi',
+                initiatePaymentBtn: 'Lipa Ksh 20',
+                processingTitle: 'Kuchakata Malipo',
+                processingDesc: 'Tafadhali subiri tunapochakata malipo yako ya M-Pesa...',
+                stkPushText: `M-Pesa STK Push imetumwa kwa ${item.contact.phone}<br>
+                    Weka PIN yako kukamilisha malipo`,
+                processingWait: 'Tafadhali subiri...',
+                successTitle: 'Malipo Yamekamilika!',
+                successDesc: 'Maelezo ya mawasiliano yamefunguliwa. Unaweza sasa kuwasiliana na mtu moja kwa moja.',
+                paymentCompleteText: 'Malipo ya M-Pesa yamekamilika',
+                closeSuccessBtn: 'Endelea'
+            }
+        };
+
+        // Update page language
+        function updatePageLanguage(lang) {
+            const t = pageTranslations[lang];
+            Object.keys(t).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.tagName === 'INPUT' && element.type !== 'radio') {
+                        element.placeholder = t[key];
+                    } else {
+                        element.innerHTML = t[key];
+                    }
+                }
+            });
+        }
+
+        // Initialize language
+        updatePageLanguage(currentLang);
+    </script>
+</body>
+</html>

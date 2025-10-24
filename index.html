@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost & Found Items Kenya - Find Your Lost ID, Phone, Wallet</title>
+    <meta name="description" content="Find lost national IDs, phones, wallets and documents in Kenya. Secure M-Pesa payment integration. Post found items and get rewards.">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/css/splide.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .hero-bg {
+            background: linear-gradient(135deg, #00A651 0%, #38A169 50%, #00A651 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease-in-out infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .particle-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .search-container {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .item-card {
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        
+        .item-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 166, 81, 0.15);
+        }
+        
+        .category-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .category-icon:hover {
+            transform: scale(1.1);
+            color: #00A651;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #00A651, #38A169);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 166, 81, 0.3);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #FF6B35, #F56500);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.3);
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                            <span class="text-white font-bold text-sm">LF</span>
+                        </div>
+                        <span class="text-xl font-bold text-gray-800">Lost<span class="text-green-600">&</span>Found</span>
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="#" class="text-gray-600 hover:text-green-600 transition-colors">Home</a>
+                    <a href="search-results.html" class="text-gray-600 hover:text-green-600 transition-colors">Search</a>
+                    <a href="post-item.html" class="text-gray-600 hover:text-green-600 transition-colors">Post Item</a>
+                    <a href="admin-dashboard.html" class="text-gray-600 hover:text-green-600 transition-colors">Admin</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button id="langToggle" class="flex items-center space-x-2 px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                        <span class="text-sm font-medium" id="currentLang">EN</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+                        </svg>
+                    </button>
+                    
+                    <button class="md:hidden p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-bg relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div class="particle-container" id="particleCanvas"></div>
+        
+        <div class="search-container max-w-4xl mx-auto px-4 text-center">
+            <div class="mb-8">
+                <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
+                    <span id="heroTitle">Find Your Lost Items</span>
+                    <br>
+                    <span class="text-yellow-300">Fast & Secure</span>
+                </h1>
+                <p class="text-xl text-green-100 mb-8 max-w-2xl mx-auto" id="heroSubtitle">
+                    Connect with finders across Kenya. Secure M-Pesa payments. Get your lost ID, phone, or wallet back safely.
+                </p>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="bg-white rounded-2xl shadow-2xl p-6 mb-8 max-w-2xl mx-auto">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input 
+                            type="text" 
+                            id="searchInput"
+                            placeholder="Search by name, ID number, or item description..."
+                            class="w-full px-4 py-3 text-lg border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition-colors"
+                        >
+                        <div class="absolute right-3 top-3 text-gray-400">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <button 
+                        onclick="performSearch()"
+                        class="btn-primary px-8 py-3 text-white font-semibold rounded-xl hover:shadow-lg transition-all"
+                    >
+                        <span id="searchBtn">Search</span>
+                    </button>
+                </div>
+                
+                <!-- Search Suggestions -->
+                <div id="searchSuggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl mt-2 shadow-lg hidden z-10">
+                    <div class="p-4 space-y-2" id="suggestionsList"></div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="post-item.html?type=found" class="btn-primary px-8 py-4 text-white font-semibold rounded-xl inline-flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    <span id="postFoundBtn">Post Found Item</span>
+                </a>
+                <a href="post-item.html?type=lost" class="btn-secondary px-8 py-4 text-white font-semibold rounded-xl inline-flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <span id="postLostBtn">Post Lost Item</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recent Items Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4" id="recentItemsTitle">Recently Found Items</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto" id="recentItemsSubtitle">
+                    Check out the latest items found by our community. Help reunite these items with their owners.
+                </p>
+            </div>
+            
+            <div class="splide" id="recentItemsCarousel">
+                <div class="splide__track">
+                    <ul class="splide__list" id="recentItemsList">
+                        <!-- Items will be populated by JavaScript -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4" id="categoriesTitle">Browse by Category</h2>
+                <p class="text-gray-600" id="categoriesSubtitle">Find what you're looking for faster by browsing specific categories</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('id-card')">
+                    <div class="category-icon text-4xl mb-4">🆔</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryID">ID Cards</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryIDDesc">National IDs, Student IDs</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('phone')">
+                    <div class="category-icon text-4xl mb-4">📱</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryPhone">Phones</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryPhoneDesc">Mobile phones, tablets</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('wallet')">
+                    <div class="category-icon text-4xl mb-4">👛</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryWallet">Wallets</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryWalletDesc">Purses, wallets, bags</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('document')">
+                    <div class="category-icon text-4xl mb-4">📄</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryDocument">Documents</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryDocumentDesc">Certificates, passports</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('electronics')">
+                    <div class="category-icon text-4xl mb-4">💻</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryElectronics">Electronics</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryElectronicsDesc">Laptops, cameras</p>
+                </div>
+                
+                <div class="category-card bg-white rounded-xl p-6 text-center shadow-lg hover:shadow-xl transition-all cursor-pointer" onclick="searchByCategory('other')">
+                    <div class="category-icon text-4xl mb-4">🔑</div>
+                    <h3 class="font-semibold text-gray-800" id="categoryOther">Other</h3>
+                    <p class="text-sm text-gray-600 mt-2" id="categoryOtherDesc">Keys, jewelry, etc.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Success Stories Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4" id="successStoriesTitle">Success Stories</h2>
+                <p class="text-gray-600" id="successStoriesSubtitle">Real stories from people who found their lost items</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white font-bold">
+                            JM
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold text-gray-800">John Mwangi</h4>
+                            <p class="text-sm text-gray-600">Nairobi</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700" id="story1">
+                        "I lost my national ID at a matatu stage. Someone found it and posted here. Paid Ksh 20 and got it back the same day!"
+                    </p>
+                    <div class="mt-4 text-green-600 font-semibold">⭐⭐⭐⭐⭐</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold">
+                            AS
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold text-gray-800">Amina Said</h4>
+                            <p class="text-sm text-gray-600">Mombasa</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700" id="story2">
+                        "Found a wallet with cash and cards. Posted it here and the owner contacted me within 2 hours. Great service!"
+                    </p>
+                    <div class="mt-4 text-blue-600 font-semibold">⭐⭐⭐⭐⭐</div>
+                </div>
+                
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold">
+                            KO
+                        </div>
+                        <div class="ml-4">
+                            <h4 class="font-semibold text-gray-800">Kevin Otieno</h4>
+                            <p class="text-sm text-gray-600">Kisumu</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-700" id="story3">
+                        "My phone fell out of my pocket in a boda boda. Someone found it and I got it back through this platform."</p>
+                    <div class="mt-4 text-purple-600 font-semibold">⭐⭐⭐⭐⭐</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-16 bg-gradient-to-r from-green-600 to-green-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center text-white mb-12">
+                <h2 class="text-3xl font-bold mb-4" id="statsTitle">Our Impact</h2>
+                <p class="text-green-100" id="statsSubtitle">Helping Kenyans find their lost items every day</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+                <div class="floating-animation">
+                    <div class="text-4xl font-bold mb-2" id="itemsFound">2,847</div>
+                    <div class="text-green-200" id="itemsFoundLabel">Items Found</div>
+                </div>
+                <div class="floating-animation" style="animation-delay: 0.5s;">
+                    <div class="text-4xl font-bold mb-2" id="happyUsers">1,923</div>
+                    <div class="text-green-200" id="happyUsersLabel">Happy Users</div>
+                </div>
+                <div class="floating-animation" style="animation-delay: 1s;">
+                    <div class="text-4xl font-bold mb-2" id="successRate">98.5%</div>
+                    <div class="text-green-200" id="successRateLabel">Success Rate</div>
+                </div>
+                <div class="floating-animation" style="animation-delay: 1.5s;">
+                    <div class="text-4xl font-bold mb-2" id="totalRewards">Ksh 15,680</div>
+                    <div class="text-green-200" id="totalRewardsLabel">Rewards Paid</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <div class="flex items-center justify-center space-x-2 mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                        <span class="text-white font-bold text-sm">LF</span>
+                    </div>
+                    <span class="text-xl font-bold">Lost<span class="text-green-400">&</span>Found Kenya</span>
+                </div>
+                <p class="text-gray-400 mb-4" id="footerDesc">
+                    Connecting finders with owners across Kenya. Secure, reliable, and community-driven.
+                </p>
+                <p class="text-gray-500 text-sm">
+                    © 2025 Lost & Found Kenya. Built with ❤️ for the Kenyan community.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bottom Navigation (Mobile) -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+        <div class="flex justify-around py-2">
+            <a href="#" class="flex flex-col items-center py-2 px-3 text-green-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                </svg>
+                <span class="text-xs mt-1">Home</span>
+            </a>
+            <a href="search-results.html" class="flex flex-col items-center py-2 px-3 text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <span class="text-xs mt-1">Search</span>
+            </a>
+            <a href="post-item.html" class="flex flex-col items-center py-2 px-3 text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span class="text-xs mt-1">Post</span>
+            </a>
+            <a href="admin-dashboard.html" class="flex flex-col items-center py-2 px-3 text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-xs mt-1">Admin</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Load Main JavaScript -->
+    <script src="main.js"></script>
+</body>
+</html>
